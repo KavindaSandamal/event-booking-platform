@@ -17,7 +17,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-app = FastAPI(title="Auth Service", version="1.0.0")
+app = FastAPI(title="Auth Service")
 
 # Add CORS middleware
 app.add_middleware(
@@ -38,11 +38,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
 
 @app.post("/register", response_model=Token)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):

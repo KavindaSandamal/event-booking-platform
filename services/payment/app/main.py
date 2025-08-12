@@ -17,7 +17,7 @@ BOOKING_URL = os.getenv("BOOKING_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-app = FastAPI(title="Payment Service", version="1.0.0")
+app = FastAPI(title="Payment Service")
 
 # Add CORS middleware
 app.add_middleware(
@@ -55,11 +55,6 @@ async def get_current_user(authorization: str = Header(None)):
             pass
     
     raise HTTPException(401, "Invalid token")
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}
 
 @app.post("/process-payment", response_model=PaymentResponse)
 async def process_payment(payment_req: PaymentRequest, authorization: str = Header(None), db: Session = Depends(get_db)):

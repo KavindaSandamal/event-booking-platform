@@ -164,8 +164,3 @@ async def get_booking_payment(booking_id: str, authorization: str = Header(None)
     except Exception as e:
         print(f"Error getting payment info: {e}")
         return {"payment_id": None, "status": booking.status}
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy"}

@@ -1,91 +1,160 @@
-# Event Ticket Booking Platform (Demo)
+# Event Ticket Booking Platform
 
-## Prerequisites
+A microservices-based event ticket booking platform built with FastAPI, React, and modern cloud technologies.
 
-- Docker & Docker Compose installed
-- (Optional) Node & npm to run frontend locally
+## 🏗️ Architecture
 
-## Setup
+### Microservices
+- **Auth Service**: JWT authentication and user management
+- **Catalog Service**: Event management and listing
+- **Booking Service**: Booking creation and management
+- **Payment Service**: Payment processing
+- **Worker Service**: Background task processing
+- **Frontend**: React SPA
 
-1. **Create environment file**: Copy `env.example` to `.env` and adjust values if needed:
+### Technology Stack
+- **Backend**: FastAPI (Python)
+- **Frontend**: React 18 + Vite
+- **Database**: PostgreSQL
+- **Cache**: Redis
+- **Message Queue**: RabbitMQ
+- **Containerization**: Docker & Docker Compose
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 18+ (for local frontend development)
+
+### Running the Application
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/KavindaSandamal/event-booking-platform.git
+   cd event-booking-platform
+   ```
+
+2. **Set up environment variables**
    ```bash
    cp env.example .env
+   # Edit .env with your configuration
    ```
 
-2. **Build & start services**:
+3. **Start all services**
    ```bash
-   docker compose up --build
+   docker compose up -d
    ```
 
-This will start:
+4. **Access the application**
+   - Frontend: http://localhost:3000
+   - Auth Service: http://localhost:8001
+   - Catalog Service: http://localhost:8002
+   - Booking Service: http://localhost:8003
+   - Payment Service: http://localhost:8004
+   - pgAdmin: http://localhost:5050
 
-- Postgres (5432)
-- Redis (6379)
-- RabbitMQ (5672, management 15672)
-- Auth service: http://localhost:8001
-- Catalog service: http://localhost:8002
-- Booking service: http://localhost:8003
-- Payment service: http://localhost:8004
-- Frontend: http://localhost:3000
+## 📋 Demo Flow
 
-## Demo Flow
+1. **Register/Login**: Create an account or login
+2. **Browse Events**: View available events in the catalog
+3. **Book Event**: Select seats and create a booking
+4. **Payment**: Complete payment for the booking
+5. **View Bookings**: Check your booking history
 
-1. Visit frontend `http://localhost:3000`
-2. **Register** in a separate modal window (Create Account button)
-3. **Login** with your credentials
-4. **Browse Events** tab to view available events
-5. **Book an event** by selecting seats
-6. **Complete payment** with phone verification:
-   - Enter phone number
-   - Receive 6-digit verification code (check console logs)
-   - Enter code to confirm payment
-7. **View your bookings** in the "My Bookings" tab
-8. **Real-time capacity updates** - event capacity reduces after booking
+## 🔧 Development
 
-## New Features
+### Local Development Setup
 
-### 🆕 **User Registration Modal**
-- Separate window-like interface for account creation
-- Password confirmation and validation
-- Clean, modern UI design
+1. **Start dependencies only**
+   ```bash
+   docker compose up -d postgres redis rabbitmq pgadmin
+   ```
 
-### 🆕 **Event Capacity Management**
-- Real-time capacity reduction when bookings are made
-- Prevents overbooking
-- Capacity updates across all services
+2. **Run services locally**
+   ```bash
+   # Auth Service
+   cd services/auth
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8001
 
-### 🆕 **Payment System with Phone Verification**
-- **Payment Service**: Handles payment processing
-- **Phone Verification**: 6-digit SMS-like verification codes
-- **Two-step Process**: Phone number → Verification code → Payment confirmation
-- **Real-time Updates**: Booking status changes to "confirmed" after payment
-- **Demo Mode**: Verification codes are printed to console (in production, SMS would be sent)
+   # Catalog Service
+   cd services/catalog
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8002
 
-## Architecture
+   # Booking Service
+   cd services/booking
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8003
 
-- **Frontend**: React 18 + Vite with modal-based UI
-- **Backend**: FastAPI microservices with CORS support
-- **Database**: PostgreSQL with SQLAlchemy ORM
-- **Cache**: Redis for session management and verification codes
-- **Message Queue**: RabbitMQ for async processing
-- **Authentication**: JWT tokens with bcrypt password hashing
-- **Payment**: Secure phone verification system
+   # Payment Service
+   cd services/payment
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8004
+   ```
 
-## Service Communication
+3. **Run Frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+### API Documentation
+- Auth Service: http://localhost:8001/docs
+- Catalog Service: http://localhost:8002/docs
+- Booking Service: http://localhost:8003/docs
+- Payment Service: http://localhost:8004/docs
+
+## 🛡️ Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Password Hashing**: bcrypt for password security
+- **CORS Configuration**: Cross-origin security
+- **Input Validation**: Pydantic schemas for data validation
+
+## 🔄 Asynchronous Communication
+
+- **RabbitMQ**: Message queue for background processing
+- **Worker Service**: Handles async tasks like email notifications
+- **Redis**: Caching and session management
+
+## 📊 Database Design
+
+- **PostgreSQL**: Primary relational database
+- **Redis**: Caching layer and session storage
+- **SQLAlchemy**: ORM for database operations
+
+## 🐳 Containerization
+
+- **Docker**: All services containerized
+- **Docker Compose**: Local development orchestration
+- **Multi-stage builds**: Optimized production images
+
+## 📁 Project Structure
 
 ```
-Frontend → Auth Service (login/register)
-Frontend → Catalog Service (browse events)
-Frontend → Booking Service (create bookings)
-Frontend → Payment Service (payment + verification)
-Booking Service → Catalog Service (update capacity)
-Payment Service → Booking Service (confirm bookings)
+event-booking-platform/
+├── services/
+│   ├── auth/           # Authentication service
+│   ├── catalog/        # Event catalog service
+│   ├── booking/        # Booking management service
+│   ├── payment/        # Payment processing service
+│   └── worker/         # Background task worker
+├── frontend/           # React frontend application
+├── docker-compose.yml  # Service orchestration
+├── env.example         # Environment variables template
+└── README.md          # This file
 ```
 
-## Notes
+## 🤝 Contributing
 
-- This demo uses simple SQLAlchemy `create_all()` (no migrations).
-- For production: add migrations, proper token storage, HTTPS, secrets management, and robust error handling.
-- All services use modern SQLAlchemy 2.0+ syntax and Python 3.11+.
-- **Payment verification codes** are printed to console for demo purposes.
-- **Event capacity** is automatically managed and updated in real-time.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
