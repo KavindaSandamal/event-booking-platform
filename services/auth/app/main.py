@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from jose import jwt, JWTError
@@ -16,7 +17,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-app = FastAPI(title="Auth Service")
+app = FastAPI(title="Auth Service", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
@@ -37,6 +38,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
 
 @app.post("/register", response_model=Token)
 def register(user_in: UserCreate, db: Session = Depends(get_db)):

@@ -7,89 +7,120 @@ from .models import Base, Event
 from .schemas import EventIn, EventOut
 from typing import List
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Database setup
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/eventdb")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-app = FastAPI(title="Catalog Service")
+app = FastAPI(title="Catalog Service", version="1.0.0")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)
-    # seed events if empty
-    db = SessionLocal()
-    try:
-        count = db.query(Event).count()
-        if count == 0:
-            events = [
-                Event(
-                    title="Jazz Night", 
-                    description="An enchanting evening of smooth jazz melodies featuring local and international artists. Perfect for a romantic date night or relaxing with friends.", 
-                    capacity=50, 
-                    venue="Blue Note Jazz Club"
-                ),
-                Event(
-                    title="Tech Talk: AI", 
-                    description="Join industry experts for an insightful discussion on the future of artificial intelligence, machine learning, and their impact on society.", 
-                    capacity=100, 
-                    venue="Tech Innovation Center"
-                ),
-                Event(
-                    title="Rock Concert", 
-                    description="An electrifying rock concert featuring multiple bands with high-energy performances and amazing stage effects.", 
-                    capacity=200, 
-                    venue="Metro Arena"
-                ),
-                Event(
-                    title="Classical Music", 
-                    description="Experience the timeless beauty of classical music performed by a full orchestra in an elegant setting.", 
-                    capacity=150, 
-                    venue="Symphony Hall"
-                ),
-                Event(
-                    title="Comedy Show", 
-                    description="Laugh the night away with top comedians delivering hilarious stand-up performances and witty humor.", 
-                    capacity=80, 
-                    venue="Comedy Club Downtown"
-                ),
-                Event(
-                    title="Dance Performance", 
-                    description="A mesmerizing contemporary dance performance showcasing innovative choreography and artistic expression.", 
-                    capacity=120, 
-                    venue="Modern Dance Theater"
-                ),
-                Event(
-                    title="Theater Play", 
-                    description="A compelling theatrical production featuring talented actors in an intimate theater setting.", 
-                    capacity=90, 
-                    venue="Community Theater"
-                ),
-                Event(
-                    title="Poetry Reading", 
-                    description="An inspiring evening of poetry readings by established and emerging poets in a cozy literary atmosphere.", 
-                    capacity=60, 
-                    venue="Bookstore Cafe"
-                )
-            ]
-            db.add_all(events)
-            db.commit()
-            print(f"Seeded {len(events)} events successfully!")
-    finally:
-        db.close()
-
 def get_db():
     db = SessionLocal()
     try:
         yield db
+    finally:
+        db.close()
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
+
+@app.on_event("startup")
+async def startup():
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+    
+    # Seed data if database is empty
+    db = SessionLocal()
+    try:
+        event_count = db.query(Event).count()
+        if event_count == 0:
+            events = [
+                Event(
+                    title="Rock Concert 2024",
+                    description="An amazing rock concert featuring top artists",
+                    venue="Madison Square Garden",
+                    date="2024-06-15",
+                    time="19:00",
+                    price=75.0,
+                    available_seats=1000
+                ),
+                Event(
+                    title="Jazz Night",
+                    description="Smooth jazz evening with live performances",
+                    venue="Blue Note Jazz Club",
+                    date="2024-06-20",
+                    time="20:00",
+                    price=45.0,
+                    available_seats=200
+                ),
+                Event(
+                    title="Classical Symphony",
+                    description="Beethoven's 9th Symphony performed by the Philharmonic",
+                    venue="Carnegie Hall",
+                    date="2024-07-01",
+                    time="19:30",
+                    price=120.0,
+                    available_seats=500
+                ),
+                Event(
+                    title="Comedy Night",
+                    description="Stand-up comedy featuring top comedians",
+                    venue="Comedy Cellar",
+                    date="2024-06-25",
+                    time="21:00",
+                    price=35.0,
+                    available_seats=150
+                ),
+                Event(
+                    title="Dance Performance",
+                    description="Contemporary dance performance by renowned artists",
+                    venue="Lincoln Center",
+                    date="2024-07-10",
+                    time="20:00",
+                    price=85.0,
+                    available_seats=300
+                ),
+                Event(
+                    title="Opera Night",
+                    description="La Traviata performed by the Metropolitan Opera",
+                    venue="Metropolitan Opera House",
+                    date="2024-07-15",
+                    time="19:00",
+                    price=150.0,
+                    available_seats=400
+                ),
+                Event(
+                    title="Folk Music Festival",
+                    description="Traditional and modern folk music celebration",
+                    venue="Central Park",
+                    date="2024-07-20",
+                    time="18:00",
+                    price=25.0,
+                    available_seats=2000
+                ),
+                Event(
+                    title="Electronic Music Rave",
+                    description="High-energy electronic music festival",
+                    venue="Brooklyn Warehouse",
+                    date="2024-07-25",
+                    time="22:00",
+                    price=60.0,
+                    available_seats=800
+                )
+            ]
+            db.add_all(events)
+            db.commit()
     finally:
         db.close()
 
