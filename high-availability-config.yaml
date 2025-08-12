@@ -1,0 +1,104 @@
+# High Availability Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ha-config
+data:
+  # Load balancer configuration
+  load-balancer: |
+    upstream backend {
+      least_conn;
+      server auth-service:8000 max_fails=3 fail_timeout=30s;
+      server auth-service-2:8000 max_fails=3 fail_timeout=30s;
+      server auth-service-3:8000 max_fails=3 fail_timeout=30s;
+    }
+  
+  # Circuit breaker configuration
+  circuit-breaker: |
+    {
+      "failureThreshold": 5,
+      "successThreshold": 2,
+      "timeoutSeconds": 30
+    }
+
+---
+# Database replication for high availability
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-ha
+spec:
+  serviceName: postgres-ha
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres-ha
+  template:
+    metadata:
+      labels:
+        app: postgres-ha
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: eventdb
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+# Redis cluster for high availability
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+spec:
+  serviceName: redis-cluster
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis-cluster
+  template:
+    metadata:
+      labels:
+        app: redis-cluster
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command: ["redis-server", "--cluster-enabled", "yes"]
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 5Gi
