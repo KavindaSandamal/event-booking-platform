@@ -12,6 +12,7 @@ import aio_pika
 import asyncio
 import httpx
 from typing import List
+from prometheus_fastapi_instrumentator import Instrumentator
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 REDIS_URL = os.getenv("REDIS_URL")
@@ -25,6 +26,7 @@ SessionLocal = sessionmaker(bind=engine)
 r = redis.from_url(REDIS_URL, decode_responses=True)
 
 app = FastAPI(title="Booking Service")
+Instrumentator().instrument(app).expose(app)
 
 # Add CORS middleware
 app.add_middleware(
@@ -161,6 +163,11 @@ async def get_booking_payment(booking_id: str, authorization: str = Header(None)
                 return {"payment_id": payment_data.get("payment_id"), "status": booking.status}
             else:
                 return {"payment_id": None, "status": booking.status}
+
+            # Health check endpoint
+            @app.get("/health")
+            def health():
+                return {"status": "ok"}
     except Exception as e:
         print(f"Error getting payment info: {e}")
         return {"payment_id": None, "status": booking.status}

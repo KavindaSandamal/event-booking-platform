@@ -6,3 +6,4 @@ pydantic
 redis
 aio_pika
 httpx
+prometheus-fastapi-instrumentator

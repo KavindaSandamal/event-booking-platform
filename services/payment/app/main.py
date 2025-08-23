@@ -18,6 +18,8 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 app = FastAPI(title="Payment Service")
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
 
 # Add CORS middleware
 app.add_middleware(
@@ -106,6 +108,11 @@ async def get_payment_receipt(payment_id: str, authorization: str = Header(None)
         "created_at": payment.created_at,
         "phone_number": payment.phone_number
     }
+
+    # Health check endpoint
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}
 
 @app.get("/payment-by-booking/{booking_id}")
 async def get_payment_by_booking(booking_id: str, authorization: str = Header(None), db: Session = Depends(get_db)):

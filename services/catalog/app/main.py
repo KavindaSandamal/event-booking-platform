@@ -13,6 +13,8 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 app = FastAPI(title="Catalog Service")
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
 
 # Add CORS middleware
 app.add_middleware(
@@ -127,3 +129,9 @@ def update_event_capacity(event_id: str, seats: int, db: Session = Depends(get_d
     db.commit()
     db.refresh(event)
     return {"message": "Capacity updated successfully", "remaining_capacity": event.capacity}
+
+
+    # Health check endpoint
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}

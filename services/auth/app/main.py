@@ -18,6 +18,8 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 app = FastAPI(title="Auth Service")
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
 
 # Add CORS middleware
 app.add_middleware(
@@ -44,14 +46,15 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user_in.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+    # Hash password before storing
     user = User(email=user_in.email, password_hash=hash_password(user_in.password))
     db.add(user)
     db.commit()
     db.refresh(user)
-    
+
     access_token = create_access_token(str(user.id))
     refresh_token = create_refresh_token(str(user.id))
-    
+
     return {
         "access_token": access_token, 
         "refresh_token": refresh_token,
@@ -66,12 +69,13 @@ class LoginModel(BaseModel):
 @app.post("/login", response_model=Token)
 def login(credentials: LoginModel, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
+    # Verify password using hash
     if not user or not verify_password(credentials.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     access_token = create_access_token(str(user.id))
     refresh_token = create_refresh_token(str(user.id))
-    
+
     return {
         "access_token": access_token, 
         "refresh_token": refresh_token,
@@ -132,4 +136,9 @@ def logout():
     # In a real application, you might want to blacklist the token
     # For now, we'll just return success
     return {"message": "Successfully logged out"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
